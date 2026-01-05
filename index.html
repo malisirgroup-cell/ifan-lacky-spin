@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IFAN Lucky Spin</title>
+<style>
+:root{--orange:#ff9800;--bg:#fff7ec}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh}
+.card{width:420px;background:#fff;border-radius:28px;padding:22px;box-shadow:0 18px 40px rgba(255,152,0,.25)}
+.header{text-align:center}
+.header h1{margin:0;font-size:28px;color:#ff7a00}
+.header p{margin:6px 0 16px;color:#666;font-size:14px}
+.wheel-wrap{position:relative;display:flex;justify-content:center;align-items:center}
+canvas{width:320px;height:320px}
+.ring{position:absolute;width:340px;height:340px;border-radius:50%;border:10px solid #ffb300;pointer-events:none}
+.pointer{position:absolute;top:-8px;width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;border-bottom:20px solid #ffb300;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+.center{position:absolute;width:86px;height:86px;border-radius:50%;background:#ffb300;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 4px 8px rgba(255,255,255,.4)}
+.center img{width:54px;height:auto}
+button{width:100%;margin-top:20px;padding:16px;border:none;border-radius:18px;background:linear-gradient(135deg,#ffb300,#ff8a00);color:#fff;font-size:18px;font-weight:700;cursor:pointer}
+button:disabled{background:#ffd9a0;color:#b36b00;cursor:not-allowed}
+.status{margin-top:14px;padding:14px;border-radius:14px;background:#fff2d6;color:#b36b00;font-weight:600;text-align:center;display:none}
+.whatsapp{margin-top:14px;display:block;text-align:center;text-decoration:none;background:#25d366;color:#fff;padding:14px;border-radius:16px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="header">
+    <h1>IFAN Lucky Spin</h1>
+    <p>One chance only · Exclusive discount awaits</p>
+  </div>
+
+  <div class="wheel-wrap">
+    <div class="pointer"></div>
+    <div class="ring"></div>
+    <canvas id="wheel" width="360" height="360"></canvas>
+    <div class="center"><img src="ifan-logo.png" alt="IFAN"></div>
+  </div>
+
+  <button id="spinBtn">SPIN NOW</button>
+  <div class="status" id="status">Already participated</div>
+
+  <a class="whatsapp" href="https://wa.me/8619957910018" target="_blank">📱 Contact us on WhatsApp</a>
+</div>
+
+<script>
+// ====== CONFIG ======
+let rewards = [
+  { text: '$500-50 OFF',   weight: 10, color: '#66BB6A' },
+  { text: '$10000-500 OFF',  weight: 20, color: '#4CAF50' },
+  { text: '$5000-200 OFF', weight: 9,  color: '#1B5E20' },
+  { text: '5% OFF',      weight: 2, color: '#43A047' },
+  { text: '2% OFF',     weight: 9, color: '#388E3C' },
+  { text: 'Thank you',   weight: 50, color: '#2E7D32' }
+];
+const ONE_TIME_ONLY = true;
+
+// ====== LOGIC ======
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const btn = document.getElementById('spinBtn');
+const status = document.getElementById('status');
+let angle = 0;
+let spinning = false;
+
+function drawWheel() {
+  const r = canvas.width / 2;
+  const slice = 2 * Math.PI / rewards.length;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  rewards.forEach((item, i) => {
+    const start = i * slice + angle;
+    ctx.beginPath();
+    ctx.moveTo(r, r);
+    ctx.arc(r, r, r, start, start + slice);
+   ctx.fillStyle = item.color || '#FFD54F';
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(r, r);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText(item.text, r - 12, 6);
+    ctx.restore();
+  });
+}
+
+function pickReward() {
+  const total = rewards.reduce((s, r) => s + r.weight, 0);
+  let rand = Math.random() * total;
+  for (const r of rewards) {
+    rand -= r.weight;
+    if (rand <= 0) return r;
+  }
+}
+
+function spin() {
+  if (spinning) return;
+  if (ONE_TIME_ONLY && localStorage.getItem('ifan_spun')) return;
+
+  spinning = true;
+  let speed = Math.random() * 0.3 + 0.25;
+
+  function animate() {
+    speed *= 0.985;
+    angle += speed;
+    drawWheel();
+    if (speed < 0.002) {
+      spinning = false;
+      const win = pickReward();
+      alert('🎉 You got: ' + win.text);
+      if (ONE_TIME_ONLY) {
+        localStorage.setItem('ifan_spun', '1');
+        btn.disabled = true;
+        status.style.display = 'block';
+      }
+    } else {
+      requestAnimationFrame(animate);
+    }
+  }
+  animate();
+}
+
+btn.onclick = spin;
+if (ONE_TIME_ONLY && localStorage.getItem('ifan_spun')) {
+  btn.disabled = true;
+  status.style.display = 'block';
+}
+
+drawWheel();
+</script>
+</body>
+</html>
